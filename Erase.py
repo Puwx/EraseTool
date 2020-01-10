@@ -1,11 +1,17 @@
 import os
 import arcpy
 
+def checkType(fc):
+    if fc.endswith('.shp'):
+        return fc[:10].replace('.shp','')
+    else:
+        return fc
+
 def eraseFeatures(in_features,erase_features):
     arcpy.env.workspace = os.path.dirname(in_features)
     arcpy.env.overwriteOutput = True
-    inName = os.path.basename(in_features)[:10].replace('.shp','') #Fields are only the first 10 characters
-    eraseName = os.path.basename(erase_features)[:10].replace('.shp','') #remove .shp from the name if it's a shapefile
+    inName = checkType(os.path.basename(in_features))
+    eraseName = checkType(os.path.basename(erase_features))
 
     unionResult = arcpy.Union_analysis([in_features,erase_features],'in_memory/union_result')
     
@@ -14,7 +20,7 @@ def eraseFeatures(in_features,erase_features):
     condOI = '"{}" >= 0 AND {} < 0'.format(inField,eraseField)
     
     erasedFeatures = arcpy.Select_analysis(unionResult,'Erase_Result',condOI) #Select the features that are of interest using condOI and the field names
-    
+    arcpy.AddMessage(erasedFeatures)
     arcpy.Delete_management('in_memory')
     
     return erasedFeatures
